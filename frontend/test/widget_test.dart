@@ -11,22 +11,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Farm Map'), findsOneWidget);
-    expect(find.text('Your farm boundary'), findsOneWidget);
-    expect(find.text('Draw Boundary'), findsOneWidget);
+    expect(find.text('No farm boundary yet'), findsOneWidget);
+    expect(find.text('Add Farm Boundary'), findsOneWidget);
   });
 
-  testWidgets('Tapping Draw Boundary shows placeholder message',
+  testWidgets('Tapping Add Farm Boundary shows placeholder message',
       (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: KrushiMitraApp()),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Draw Boundary'));
+    await tester.tap(find.text('Add Farm Boundary'));
     await tester.pump();
 
     expect(
-      find.text('Boundary drawing will be available next.'),
+      find.text('Farm boundary setup will be available next.'),
       findsOneWidget,
     );
   });
