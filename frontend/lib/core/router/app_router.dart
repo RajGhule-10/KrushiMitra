@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/farms/presentation/screens/farm_map_screen.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -7,6 +8,11 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
+      name: 'dashboard',
+      builder: (context, state) => const DashboardScreen(),
+    ),
+    GoRoute(
+      path: '/farm-map',
       name: 'farmMap',
       builder: (context, state) => const FarmMapScreen(),
     ),
