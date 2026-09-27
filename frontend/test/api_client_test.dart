@@ -22,4 +22,13 @@ void main() {
 
     expect(client.dio.options.headers['Content-Type'], 'application/json');
   });
+
+  test('creates API client with a custom backend URL', () {
+    final client = ApiClient(
+      tokenStore: FakeTokenStore(),
+      baseUrl: 'http://10.0.2.2:8000',
+    );
+
+    expect(client.dio.options.baseUrl, 'http://10.0.2.2:8000');
+  });
 }

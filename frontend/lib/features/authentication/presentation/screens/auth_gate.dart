@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/auth_controller.dart';
 import '../state/auth_state.dart';
+import '../../../dashboard/presentation/screens/dashboard_screen.dart';
+import 'login_screen.dart';
 
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
@@ -31,31 +33,13 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
       case AuthAuthenticated():
-        return const _AuthenticatedPlaceholder();
+        return const DashboardScreen();
 
       case AuthUnauthenticated():
-        return const _UnauthenticatedPlaceholder();
+        return const LoginScreen();
 
       case AuthError():
         return Scaffold(body: Center(child: Text(authState.message)));
     }
-  }
-}
-
-class _AuthenticatedPlaceholder extends StatelessWidget {
-  const _AuthenticatedPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Authenticated')));
-  }
-}
-
-class _UnauthenticatedPlaceholder extends StatelessWidget {
-  const _UnauthenticatedPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Login required')));
   }
 }
