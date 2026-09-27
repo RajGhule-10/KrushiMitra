@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:frontend/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:frontend/features/farms/presentation/screens/farm_map_screen.dart';
-import 'package:frontend/main.dart';
 
 void main() {
   // The dashboard hero loads a network image. In the test environment
@@ -16,7 +17,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const ProviderScope(child: KrushiMitraApp()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: DashboardScreen())),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
   }
@@ -65,7 +68,31 @@ void main() {
     testWidgets('bottom navigation Map destination reaches Farm Map', (
       tester,
     ) async {
-      await pumpDashboard(tester);
+      tester.view.physicalSize = const Size(1176, 2400);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/farm-map',
+            builder: (context, state) => const FarmMapScreen(),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       await tester.tap(find.text('Map'));
       await tester.pumpAndSettle();
