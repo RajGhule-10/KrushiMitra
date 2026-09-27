@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/auth_repository_provider.dart';
 import '../../data/models/login_request.dart';
 import 'auth_state.dart';
+import '../../data/auth_error_mapper.dart';
 
 final authControllerProvider = NotifierProvider<AuthController, AuthState>(
   AuthController.new,
@@ -40,7 +41,7 @@ class AuthController extends Notifier<AuthState> {
 
       state = AuthAuthenticated(user);
     } catch (error) {
-      state = AuthError(error.toString());
+      state = AuthError(mapAuthError(error));
     }
   }
 
