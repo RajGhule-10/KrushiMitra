@@ -10,11 +10,13 @@ class DashboardHeader extends StatelessWidget {
     required this.name,
     required this.notificationCount,
     required this.onNotificationsTap,
+    required this.onProfileTap,
   });
 
   final String name;
   final int notificationCount;
   final VoidCallback onNotificationsTap;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,27 @@ class DashboardHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        InkWell(
+          onTap: onProfileTap,
+          borderRadius: AppRadius.mdRadius,
+          child: Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.12),
+              borderRadius: AppRadius.mdRadius,
+            ),
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -52,6 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   name: DashboardMockData.farmerName,
                   notificationCount: DashboardMockData.notificationCount,
                   onNotificationsTap: () => _showAlertsPlaceholder(context),
+                  onProfileTap: () => context.push('/profile'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FarmSelector(
