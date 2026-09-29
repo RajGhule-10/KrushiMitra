@@ -102,7 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottom: AppSpacing.lg,
             child: DashboardBottomNavigation(
               notificationCount: DashboardMockData.notificationCount,
-              onFarmsTap: () => context.go('/farm-map'),
+              onFarmsTap: () => context.go('/farms'),
               onMapTap: () => context.go('/farm-map'),
               onAlertsTap: () => _showAlertsPlaceholder(context),
             ),

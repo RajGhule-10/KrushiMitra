@@ -4,6 +4,8 @@ import '../../features/authentication/presentation/screens/auth_gate.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/farmer_profile/presentation/screens/farmer_profile_screen.dart';
 import '../../features/farms/presentation/screens/farm_map_screen.dart';
+import '../../features/farms/presentation/screens/create_farm_screen.dart';
+import '../../features/farms/presentation/screens/farms_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -22,6 +24,16 @@ final GoRouter appRouter = GoRouter(
       path: '/profile',
       name: 'profile',
       builder: (context, state) => const FarmerProfileScreen(),
+    ),
+    GoRoute(
+      path: '/farms',
+      name: 'farms',
+      builder: (context, state) => const FarmsScreen(),
+    ),
+    GoRoute(
+      path: '/farms/create',
+      name: 'createFarm',
+      builder: (context, state) => const CreateFarmScreen(),
     ),
     GoRoute(
       path: '/farm-map',
