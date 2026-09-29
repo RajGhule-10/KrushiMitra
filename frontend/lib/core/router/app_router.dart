@@ -5,6 +5,8 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/farmer_profile/presentation/screens/farmer_profile_screen.dart';
 import '../../features/farms/presentation/screens/farm_map_screen.dart';
 import '../../features/farms/presentation/screens/create_farm_screen.dart';
+import '../../features/farms/presentation/screens/farm_details_screen.dart';
+import '../../features/farms/presentation/screens/farm_boundary_screen.dart';
 import '../../features/farms/presentation/screens/farms_screen.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -34,6 +36,18 @@ final GoRouter appRouter = GoRouter(
       path: '/farms/create',
       name: 'createFarm',
       builder: (context, state) => const CreateFarmScreen(),
+    ),
+    GoRoute(
+      path: '/farms/:farmId',
+      name: 'farmDetails',
+      builder: (context, state) =>
+          FarmDetailsScreen(farmId: state.pathParameters['farmId']!),
+    ),
+    GoRoute(
+      path: '/farms/:farmId/boundary',
+      name: 'farmBoundary',
+      builder: (context, state) =>
+          FarmBoundaryScreen(farmId: state.pathParameters['farmId']!),
     ),
     GoRoute(
       path: '/farm-map',
