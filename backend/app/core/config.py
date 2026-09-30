@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     cors_origins: str = ""
 
+    gee_project_id: str | None = None
+    gee_credentials_path: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -4,6 +4,9 @@
 .env
 .env.*
 !.env.example
+backend/credentials/
+backend/.credentials/
+backend/gee-credentials.json
 
 # =========================
 # Python
