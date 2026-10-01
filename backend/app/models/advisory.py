@@ -31,6 +31,13 @@ class Advisory(Base):
         index=True,
     )
 
+    observation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("crop_observations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
     title: Mapped[str] = mapped_column(
         String(200),
         nullable=False,
@@ -42,6 +49,11 @@ class Advisory(Base):
     )
 
     severity: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    priority: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
     )
