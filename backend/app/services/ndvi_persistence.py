@@ -9,6 +9,7 @@ from app.models.observation import CropObservation, HealthMetric
 from app.remote_sensing.exceptions import RemoteSensingProviderError
 from app.remote_sensing.models import SatelliteImage
 from app.repositories.crop_observation import CropObservationRepository
+from app.services.ndvi_classification import classify_ndvi
 
 
 class NdviPersistenceService:
@@ -46,7 +47,7 @@ class NdviPersistenceService:
                 observation_id=observation.id,
                 metric_name="ndvi_mean",
                 metric_value=metric_value,
-                health_status=None,
+                health_status=classify_ndvi(metric_value),
             )
             self.repository.create_health_metric(metric)
             self.repository.commit()
