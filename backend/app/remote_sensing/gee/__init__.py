@@ -2,6 +2,7 @@
 
 from .client import initialize_earth_engine
 from .ndvi import GeeNdviProcessor, GeeNdviResult
+from .statistics import GeeNdviStatisticsProcessor
 from .provider import (
     GEE_PROVIDER_NAME,
     SENTINEL_2_SR_HARMONIZED_COLLECTION,
@@ -17,5 +18,6 @@ __all__ = [
     "GeeProcessedImage",
     "GeeNdviProcessor",
     "GeeNdviResult",
+    "GeeNdviStatisticsProcessor",
     "initialize_earth_engine",
 ]
