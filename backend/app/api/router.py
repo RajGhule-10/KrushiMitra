@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, farm, farm_boundary, farmer, health
+from app.api.routes import auth, crop_health, farm, farm_boundary, farmer, health
 
 api_router = APIRouter()
 
@@ -32,4 +32,10 @@ api_router.include_router(
     farm_boundary.router,
     prefix="/farms",
     tags=["Farm Boundaries"],
+)
+
+api_router.include_router(
+    crop_health.router,
+    prefix="/crops",
+    tags=["Crop Health"],
 )
