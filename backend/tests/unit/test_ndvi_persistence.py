@@ -68,14 +68,23 @@ def _service(repository: FakeRepository) -> NdviPersistenceService:
     return service
 
 
-def test_persists_observation_and_mean_ndvi_metric():
+@pytest.mark.parametrize(
+    ("mean_ndvi", "expected_status"),
+    [
+        (Decimal("0.15"), "Severe"),
+        (Decimal("0.30"), "Bad"),
+        (Decimal("0.50"), "Good"),
+        (Decimal("0.75"), "Great"),
+    ],
+)
+def test_persists_observation_and_mean_ndvi_metric(mean_ndvi, expected_status):
     crop = _crop()
     repository = FakeRepository(crop)
 
     observation, metric = _service(repository).persist_mean_ndvi(
         crop.id,
         _image(),
-        0.42,
+        mean_ndvi,
     )
 
     assert repository.committed is True
@@ -85,8 +94,8 @@ def test_persists_observation_and_mean_ndvi_metric():
     assert observation.cloud_percentage == Decimal("12.5")
     assert metric.observation_id == observation.id
     assert metric.metric_name == "ndvi_mean"
-    assert metric.metric_value == Decimal("0.42")
-    assert metric.health_status is None
+    assert metric.metric_value == mean_ndvi
+    assert metric.health_status == expected_status
 
 
 def test_missing_crop_is_rejected():

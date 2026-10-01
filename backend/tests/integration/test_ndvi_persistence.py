@@ -58,7 +58,7 @@ def test_ndvi_persistence_creates_related_observation_and_metric(db_session):
     assert metric.observation_id == observation.id
     assert metric.metric_name == "ndvi_mean"
     assert metric.metric_value == Decimal("0.420000")
-    assert metric.health_status is None
+    assert metric.health_status == "Good"
     assert metric.observation.crop_id == crop.id
 
 
