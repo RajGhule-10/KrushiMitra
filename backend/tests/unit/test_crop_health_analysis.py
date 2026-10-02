@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
+import app.services.crop_health_analysis as analysis_module
 
 from app.core.errors import NotFoundException
 from app.models.advisory import Advisory
@@ -139,6 +140,42 @@ class FakeAdvisoryPersistence:
     def persist(self, advisory, farm_id, crop_id, observation_id):
         self.calls.append((advisory, farm_id, crop_id, observation_id))
         return self.persisted_advisory
+
+
+class RaisingImageProcessor(FakeImageProcessor):
+    def __init__(self, error):
+        super().__init__(object())
+        self.error = error
+
+    def process_image(self, image, geometry):
+        self.calls.append((image, geometry))
+        raise self.error
+
+
+class RaisingNdviProcessor(FakeNdviProcessor):
+    def __init__(self, error):
+        super().__init__(object())
+        self.error = error
+
+    def calculate_ndvi(self, processed_image):
+        self.calls.append(processed_image)
+        raise self.error
+
+
+class RaisingStatisticsProcessor(FakeStatisticsProcessor):
+    def __init__(self, error):
+        super().__init__(0.0)
+        self.error = error
+
+    def calculate_mean(self, ndvi_result):
+        self.calls.append(ndvi_result)
+        raise self.error
+
+
+class RaisingAdvisoryPersistence(FakeAdvisoryPersistence):
+    def persist(self, advisory, farm_id, crop_id, observation_id):
+        self.calls.append((advisory, farm_id, crop_id, observation_id))
+        raise RuntimeError("advisory persistence failed")
 
 
 def _user():
@@ -411,3 +448,239 @@ def test_analysis_result_is_immutable():
 
     with pytest.raises(FrozenInstanceError):
         result.crop_id = UUID("00000000-0000-0000-0000-000000000009")
+
+
+def test_provider_receives_exact_boundary_geometry_and_search_parameters():
+    selected_image = _image("selected", date(2026, 10, 2))
+    geometry = {"type": "MultiPolygon", "coordinates": [[[[73.8, 18.5]]]]}
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[selected_image],
+    )
+    service.farm_boundary_repository.geometry = geometry
+    analysis_date = date(2026, 10, 2)
+
+    service.analyze_crop_health(_user(), CROP_ID, analysis_date)
+
+    assert collaborators["provider"].calls == [
+        (
+            geometry,
+            analysis_date - timedelta(days=DEFAULT_LOOKBACK_DAYS),
+            analysis_date,
+            DEFAULT_MAX_CLOUD_PERCENTAGE,
+        )
+    ]
+
+
+def test_image_processor_receives_selected_image_and_exact_geometry():
+    selected_image = _image("selected", date(2026, 10, 2))
+    geometry = {"type": "Polygon", "coordinates": [[[73.8, 18.5]]]}
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("older", date(2026, 10, 1)), selected_image],
+    )
+    service.farm_boundary_repository.geometry = geometry
+
+    service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert collaborators["image_processor"].calls == [
+        (selected_image, geometry)
+    ]
+
+
+def test_ndvi_processor_receives_processed_image():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    processed_image = object()
+    collaborators["image_processor"].processed_image = processed_image
+
+    service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert collaborators["ndvi_processor"].calls == [processed_image]
+
+
+def test_statistics_processor_receives_ndvi_result():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    ndvi_result = object()
+    collaborators["ndvi_processor"].ndvi_result = ndvi_result
+
+    service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert collaborators["statistics_processor"].calls == [ndvi_result]
+
+
+def test_ndvi_persistence_receives_statistics_result():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    mean_ndvi = Decimal("0.123456")
+    collaborators["statistics_processor"].mean_ndvi = mean_ndvi
+    selected_image = _image("image", date(2026, 10, 2))
+    collaborators["provider"].images = [selected_image]
+
+    service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert collaborators["ndvi_persistence"].calls == [
+        (CROP_ID, selected_image, mean_ndvi)
+    ]
+
+
+def test_image_processing_failure_short_circuits_downstream_workflow():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    error = RuntimeError("image processing failed")
+    image_processor = RaisingImageProcessor(error)
+    service.image_processor = image_processor
+
+    with pytest.raises(RuntimeError, match="image processing failed") as raised:
+        service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert raised.value is error
+    assert collaborators["ndvi_processor"].calls == []
+    assert collaborators["statistics_processor"].calls == []
+    assert collaborators["ndvi_persistence"].calls == []
+    assert collaborators["advisory_persistence"].calls == []
+
+
+def test_ndvi_calculation_failure_short_circuits_downstream_workflow():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    error = RuntimeError("NDVI calculation failed")
+    service.ndvi_processor = RaisingNdviProcessor(error)
+
+    with pytest.raises(RuntimeError, match="NDVI calculation failed") as raised:
+        service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert raised.value is error
+    assert collaborators["statistics_processor"].calls == []
+    assert collaborators["ndvi_persistence"].calls == []
+    assert collaborators["advisory_persistence"].calls == []
+
+
+def test_statistics_failure_short_circuits_persistence():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    error = RuntimeError("statistics failed")
+    service.statistics_processor = RaisingStatisticsProcessor(error)
+
+    with pytest.raises(RuntimeError, match="statistics failed") as raised:
+        service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert raised.value is error
+    assert collaborators["ndvi_persistence"].calls == []
+    assert collaborators["advisory_persistence"].calls == []
+
+
+def test_advisory_generation_failure_skips_advisory_persistence(monkeypatch):
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+
+    def raise_advisory(_health_status):
+        raise RuntimeError("advisory generation failed")
+
+    monkeypatch.setattr(analysis_module, "generate_advisory", raise_advisory)
+
+    with pytest.raises(RuntimeError, match="advisory generation failed"):
+        service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+    assert collaborators["advisory_persistence"].calls == []
+
+
+def test_advisory_persistence_failure_propagates():
+    service, collaborators = _collaborators(
+        profile=_profile(),
+        crop=_crop(),
+        boundary=_boundary(),
+        images=[_image("image", date(2026, 10, 2))],
+    )
+    advisory_persistence = RaisingAdvisoryPersistence(
+        collaborators["advisory_persistence"].persisted_advisory
+    )
+    service.advisory_persistence = advisory_persistence
+
+    with pytest.raises(RuntimeError, match="advisory persistence failed"):
+        service.analyze_crop_health(_user(), CROP_ID, date(2026, 10, 3))
+
+
+def test_constructor_wires_default_collaborators(monkeypatch):
+    factories = {}
+
+    class Factory:
+        def __init__(self, name):
+            self.name = name
+            self.instance = object()
+            self.calls = []
+
+        def __call__(self, *args):
+            self.calls.append(args)
+            return self.instance
+
+    names = (
+        "CropHealthRepository",
+        "FarmerProfileRepository",
+        "FarmBoundaryRepository",
+        "GeeRemoteSensingProvider",
+        "GeeImageProcessor",
+        "GeeNdviProcessor",
+        "GeeNdviStatisticsProcessor",
+        "NdviPersistenceService",
+        "AdvisoryPersistenceService",
+    )
+    for name in names:
+        factory = Factory(name)
+        factories[name] = factory
+        monkeypatch.setattr(analysis_module, name, factory)
+
+    db = object()
+    service = CropHealthAnalysisService(db)
+
+    assert service.crop_health_repository is factories["CropHealthRepository"].instance
+    assert service.farmer_profile_repository is factories["FarmerProfileRepository"].instance
+    assert service.farm_boundary_repository is factories["FarmBoundaryRepository"].instance
+    assert service.provider is factories["GeeRemoteSensingProvider"].instance
+    assert service.image_processor is factories["GeeImageProcessor"].instance
+    assert service.ndvi_processor is factories["GeeNdviProcessor"].instance
+    assert service.statistics_processor is factories["GeeNdviStatisticsProcessor"].instance
+    assert service.ndvi_persistence is factories["NdviPersistenceService"].instance
+    assert service.advisory_persistence is factories["AdvisoryPersistenceService"].instance
+    assert factories["CropHealthRepository"].calls == [(db,)]
+    assert factories["FarmerProfileRepository"].calls == [(db,)]
+    assert factories["FarmBoundaryRepository"].calls == [(db,)]
+    assert factories["GeeRemoteSensingProvider"].calls == [()]
+    assert factories["GeeImageProcessor"].calls == [()]
+    assert factories["GeeNdviProcessor"].calls == [()]
+    assert factories["GeeNdviStatisticsProcessor"].calls == [()]
+    assert factories["NdviPersistenceService"].calls == [(db,)]
+    assert factories["AdvisoryPersistenceService"].calls == [(db,)]
