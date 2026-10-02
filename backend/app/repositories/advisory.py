@@ -1,6 +1,11 @@
+from uuid import UUID
+
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.advisory import Advisory
+from app.models.crop import Crop
+from app.models.farm import Farm
 
 
 class AdvisoryRepository:
@@ -22,3 +27,24 @@ class AdvisoryRepository:
 
     def rollback(self) -> None:
         self.db.rollback()
+
+    def get_latest_for_crop_for_farmer(
+        self,
+        crop_id: UUID,
+        farmer_profile_id: UUID,
+    ) -> Advisory | None:
+        statement = (
+            select(Advisory)
+            .join(Crop, Advisory.crop_id == Crop.id)
+            .join(Farm, Crop.farm_id == Farm.id)
+            .where(
+                Advisory.crop_id == crop_id,
+                Farm.farmer_id == farmer_profile_id,
+            )
+            .order_by(
+                Advisory.created_at.desc(),
+                Advisory.id.desc(),
+            )
+            .limit(1)
+        )
+        return self.db.scalar(statement)
