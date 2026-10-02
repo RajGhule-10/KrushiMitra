@@ -5,6 +5,7 @@ from app.api.routes import (
     auth,
     crop_health,
     crop_health_analysis,
+    crop_health_history,
     farm,
     farm_boundary,
     farmer,
@@ -59,4 +60,10 @@ api_router.include_router(
     crop_health_analysis.router,
     prefix="/crops",
     tags=["Crop Health Analysis"],
+)
+
+api_router.include_router(
+    crop_health_history.router,
+    prefix="/crops",
+    tags=["Crop Health History"],
 )
