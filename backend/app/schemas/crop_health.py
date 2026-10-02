@@ -44,3 +44,16 @@ class CropHealthAnalysisResponse(BaseModel):
     observation: CropHealthAnalysisObservationResponse
     health: CropHealthAnalysisHealthResponse
     advisory: CropHealthAnalysisAdvisoryResponse
+
+
+class CropHealthHistoryItem(BaseModel):
+    observation_date: date
+    data_source: str
+    cloud_percentage: Decimal | None
+    ndvi_mean: Decimal
+    health_status: str
+
+
+class CropHealthHistoryResponse(BaseModel):
+    crop_id: UUID
+    history: list[CropHealthHistoryItem]
