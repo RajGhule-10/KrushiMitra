@@ -57,3 +57,16 @@ class CropHealthHistoryItem(BaseModel):
 class CropHealthHistoryResponse(BaseModel):
     crop_id: UUID
     history: list[CropHealthHistoryItem]
+
+
+class CropHealthTrendDetails(BaseModel):
+    direction: str
+    first_ndvi: Decimal
+    latest_ndvi: Decimal
+    change: Decimal
+    observation_count: int
+
+
+class CropHealthTrendResponse(BaseModel):
+    crop_id: UUID
+    trend: CropHealthTrendDetails
