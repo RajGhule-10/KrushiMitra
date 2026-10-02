@@ -59,3 +59,29 @@ class CropHealthRepository:
             .limit(1)
         )
         return self.db.scalar(statement)
+
+    def get_health_history_for_crop(
+        self,
+        crop_id: UUID,
+        farmer_profile_id: UUID,
+    ) -> list[tuple[CropObservation, HealthMetric]]:
+        statement = (
+            select(CropObservation, HealthMetric)
+            .join(
+                HealthMetric,
+                HealthMetric.observation_id == CropObservation.id,
+            )
+            .join(Crop, CropObservation.crop_id == Crop.id)
+            .join(Farm, Crop.farm_id == Farm.id)
+            .where(
+                CropObservation.crop_id == crop_id,
+                Farm.farmer_id == farmer_profile_id,
+                HealthMetric.metric_name == "ndvi_mean",
+            )
+            .order_by(
+                CropObservation.observation_date.desc(),
+                CropObservation.created_at.desc(),
+                CropObservation.id.desc(),
+            )
+        )
+        return list(self.db.execute(statement).all())
