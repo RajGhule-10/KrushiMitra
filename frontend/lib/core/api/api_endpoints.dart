@@ -12,4 +12,13 @@ class ApiEndpoints {
   static String farm(String farmId) => '$farms/$farmId';
 
   static String farmBoundary(String farmId) => '$farms/$farmId/boundary';
+
+  static const String crops = '/api/v1/crops';
+
+  static String cropHealth(String cropId) => '$crops/$cropId/health';
+
+  static String cropHealthHistory(String cropId) =>
+      '$crops/$cropId/health/history';
+
+  static String cropHealthTrend(String cropId) => '$crops/$cropId/health/trend';
 }
