@@ -20,9 +20,11 @@ class FarmBoundaryScreen extends ConsumerStatefulWidget {
 }
 
 class _FarmBoundaryScreenState extends ConsumerState<FarmBoundaryScreen> {
+  final _mapController = MapController();
   final _points = BoundaryPointStore();
   List<List<LatLng>> _savedPolygons = [];
   bool _isEditing = true;
+  bool _mapReady = false;
 
   @override
   void initState() {
@@ -57,6 +59,7 @@ class _FarmBoundaryScreenState extends ConsumerState<FarmBoundaryScreen> {
           _isEditing = false;
           _points.clear();
         });
+        _fitSavedBoundary();
       } on FormatException {
         setState(() {
           _savedPolygons = [];
@@ -123,9 +126,14 @@ class _FarmBoundaryScreenState extends ConsumerState<FarmBoundaryScreen> {
         children: [
           FlutterMap(
             key: const Key('farm-boundary-map'),
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: const LatLng(18.5204, 73.8567),
               initialZoom: 13,
+              onMapReady: () {
+                _mapReady = true;
+                _fitSavedBoundary();
+              },
               onTap: (_, point) {
                 if (!_isEditing || isLoading || isSaving) {
                   return;
@@ -232,6 +240,26 @@ class _FarmBoundaryScreenState extends ConsumerState<FarmBoundaryScreen> {
         .loadBoundary(widget.farmId);
   }
 
+  void _fitSavedBoundary() {
+    if (!_mapReady || _savedPolygons.isEmpty) {
+      return;
+    }
+
+    final bounds = farmBoundaryBounds(_savedPolygons);
+    if (bounds == null) {
+      return;
+    }
+
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        minZoom: 3,
+        maxZoom: 18,
+      ),
+    );
+  }
+
   void _startEditing() {
     if (_savedPolygons.length == 1) {
       final points = List<LatLng>.from(_savedPolygons.first);
@@ -254,6 +282,18 @@ class _FarmBoundaryScreenState extends ConsumerState<FarmBoundaryScreen> {
       _isEditing = true;
     });
   }
+}
+
+LatLngBounds? farmBoundaryBounds(List<List<LatLng>> polygons) {
+  final points = [
+    for (final polygon in polygons) ...polygon,
+  ];
+
+  if (points.isEmpty) {
+    return null;
+  }
+
+  return LatLngBounds.fromPoints(points);
 }
 
 class BoundaryPointStore {

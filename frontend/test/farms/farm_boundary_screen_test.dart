@@ -196,6 +196,45 @@ void main() {
     ]);
   });
 
+  test('calculates bounds for a Polygon', () {
+    final bounds = farmBoundaryBounds(const [
+      [
+        LatLng(18.5, 73.8),
+        LatLng(18.51, 73.82),
+        LatLng(18.49, 73.81),
+      ],
+    ]);
+
+    expect(bounds, isNotNull);
+    expect(bounds!.south, 18.49);
+    expect(bounds.north, 18.51);
+    expect(bounds.west, 73.8);
+    expect(bounds.east, 73.82);
+  });
+
+  test('calculates bounds across all MultiPolygon parts', () {
+    final bounds = farmBoundaryBounds(const [
+      [
+        LatLng(18.5, 73.8),
+        LatLng(18.51, 73.81),
+      ],
+      [
+        LatLng(18.6, 73.9),
+        LatLng(18.62, 73.92),
+      ],
+    ]);
+
+    expect(bounds, isNotNull);
+    expect(bounds!.south, 18.5);
+    expect(bounds.north, 18.62);
+    expect(bounds.west, 73.8);
+    expect(bounds.east, 73.92);
+  });
+
+  test('returns no bounds for an empty boundary', () {
+    expect(farmBoundaryBounds(const []), isNull);
+  });
+
   testWidgets('save is disabled before three points and enabled after', (
     tester,
   ) async {
