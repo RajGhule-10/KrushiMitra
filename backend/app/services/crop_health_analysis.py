@@ -33,6 +33,39 @@ class CropHealthAnalysisResult:
     advisory: PersistedAdvisory
 
 
+def prepare_latest_ndvi(
+    *,
+    provider: GeeRemoteSensingProvider,
+    image_processor: GeeImageProcessor,
+    ndvi_processor: GeeNdviProcessor,
+    geometry: dict[str, object],
+    analysis_date: date | None = None,
+) -> tuple[SatelliteImage, object]:
+    end_date = analysis_date or date.today()
+    start_date = end_date - timedelta(days=DEFAULT_LOOKBACK_DAYS)
+    images = provider.search_images(
+        geometry,
+        start_date,
+        end_date,
+        DEFAULT_MAX_CLOUD_PERCENTAGE,
+    )
+    if not images:
+        raise RemoteSensingProviderError(
+            "No suitable satellite image was found for this crop."
+        )
+
+    image = max(
+        images,
+        key=lambda candidate: (
+            candidate.acquisition_date,
+            candidate.image_id,
+        ),
+    )
+    processed_image = image_processor.process_image(image, geometry)
+    ndvi_result = ndvi_processor.calculate_ndvi(processed_image)
+    return image, ndvi_result
+
+
 class CropHealthAnalysisService:
     """Orchestrate satellite-based crop-health analysis and persistence."""
 
@@ -85,28 +118,13 @@ class CropHealthAnalysisService:
             raise NotFoundException("Farm boundary not found.")
 
         geometry = self.farm_boundary_repository.get_geometry_as_geojson(boundary)
-        end_date = analysis_date or date.today()
-        start_date = end_date - timedelta(days=DEFAULT_LOOKBACK_DAYS)
-        images = self.provider.search_images(
-            geometry,
-            start_date,
-            end_date,
-            DEFAULT_MAX_CLOUD_PERCENTAGE,
+        image, ndvi_result = prepare_latest_ndvi(
+            provider=self.provider,
+            image_processor=self.image_processor,
+            ndvi_processor=self.ndvi_processor,
+            geometry=geometry,
+            analysis_date=analysis_date,
         )
-        if not images:
-            raise RemoteSensingProviderError(
-                "No suitable satellite image was found for this crop."
-            )
-
-        image = max(
-            images,
-            key=lambda candidate: (
-                candidate.acquisition_date,
-                candidate.image_id,
-            ),
-        )
-        processed_image = self.image_processor.process_image(image, geometry)
-        ndvi_result = self.ndvi_processor.calculate_ndvi(processed_image)
         mean_ndvi = self.statistics_processor.calculate_mean(ndvi_result)
         observation, metric = self.ndvi_persistence.persist_mean_ndvi(
             crop.id,

@@ -70,3 +70,18 @@ class CropHealthTrendDetails(BaseModel):
 class CropHealthTrendResponse(BaseModel):
     crop_id: UUID
     trend: CropHealthTrendDetails
+
+
+class CropHealthMapVisualization(BaseModel):
+    type: str
+    min: float
+    max: float
+    palette: list[str]
+
+
+class CropHealthMapResponse(BaseModel):
+    crop_id: UUID
+    observation_date: date
+    data_source: str
+    visualization: CropHealthMapVisualization
+    tile_url_template: str
