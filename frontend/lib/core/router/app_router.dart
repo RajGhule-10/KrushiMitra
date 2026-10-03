@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/authentication/presentation/screens/auth_gate.dart';
+import '../../features/crop_health/presentation/screens/crop_health_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/farmer_profile/presentation/screens/farmer_profile_screen.dart';
 import '../../features/farms/presentation/screens/farm_map_screen.dart';
@@ -53,6 +54,12 @@ final GoRouter appRouter = GoRouter(
       path: '/farm-map',
       name: 'farmMap',
       builder: (context, state) => const FarmMapScreen(),
+    ),
+    GoRoute(
+      path: '/crops/:cropId/health',
+      name: 'cropHealth',
+      builder: (context, state) =>
+          CropHealthScreen(cropId: state.pathParameters['cropId']!),
     ),
   ],
 );
