@@ -6,6 +6,7 @@ import 'package:frontend/features/crop_health/data/crop_health_providers.dart';
 import 'package:frontend/features/crop_health/data/crop_health_repository_contract.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_history_item.dart';
+import 'package:frontend/features/crop_health/data/models/crop_health_map.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_trend.dart';
 import 'package:frontend/features/crop_health/presentation/screens/crop_health_screen.dart';
 
@@ -23,6 +24,11 @@ class _FakeCropHealthRepository implements CropHealthRepositoryContract {
   final CropHealthTrend? trendResult;
   final bool shouldThrow;
   final Duration? delay;
+
+  @override
+  Future<CropHealthMap> getCropHealthMap(String cropId) {
+    throw UnimplementedError();
+  }
 
   @override
   Future<CropHealth> getCropHealth(String cropId) async {
@@ -112,9 +118,7 @@ void main() {
     );
   }
 
-  testWidgets('shows the matching backend health status', (
-    tester,
-  ) async {
+  testWidgets('shows the matching backend health status', (tester) async {
     final repository = _FakeCropHealthRepository(
       cropHealthResult: cropHealth,
       historyResult: historyItems,

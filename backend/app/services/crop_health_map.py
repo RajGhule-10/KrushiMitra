@@ -31,6 +31,7 @@ from app.services.crop_health_analysis import (
 @dataclass(frozen=True)
 class CropHealthMapResult:
     crop_id: UUID
+    farm_id: UUID
     observation_date: date
     data_source: str
     visualization: GeeNdviVisualization
@@ -77,6 +78,7 @@ class CropHealthMapService:
         )
         return CropHealthMapResult(
             crop_id=crop.id,
+            farm_id=crop.farm_id,
             observation_date=image.acquisition_date,
             data_source="sentinel-2",
             visualization=visualization,

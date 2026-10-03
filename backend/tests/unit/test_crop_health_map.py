@@ -149,6 +149,7 @@ def test_owned_crop_returns_latest_visualization_without_persistence():
     )
 
     assert result.crop_id == CROP_ID
+    assert result.farm_id == FARM_ID
     assert result.observation_date == date(2026, 10, 1)
     assert result.data_source == "sentinel-2"
     assert provider.calls[0][1:] == (

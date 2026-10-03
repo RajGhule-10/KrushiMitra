@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -153,6 +154,15 @@ class _CropHealthContentView extends StatelessWidget {
         Text('Current Health', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
         _CurrentHealthCard(cropHealth: cropHealth, history: history),
+        if (cropHealth != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton.icon(
+            onPressed: () =>
+                context.push('/crops/${cropHealth!.cropId}/health/map'),
+            icon: const Icon(Icons.satellite_alt_outlined),
+            label: const Text('View Satellite Map'),
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         Text('Health Trend', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
@@ -208,10 +218,7 @@ class _SectionLoading extends StatelessWidget {
 }
 
 class _CurrentHealthCard extends StatelessWidget {
-  const _CurrentHealthCard({
-    required this.cropHealth,
-    required this.history,
-  });
+  const _CurrentHealthCard({required this.cropHealth, required this.history});
 
   final CropHealth? cropHealth;
   final List<CropHealthHistoryItem>? history;
@@ -272,10 +279,7 @@ class _CurrentHealthCard extends StatelessWidget {
               Container(
                 width: 10,
                 height: 10,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(

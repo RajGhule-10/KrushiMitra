@@ -81,6 +81,7 @@ class CropHealthMapVisualization(BaseModel):
 
 class CropHealthMapResponse(BaseModel):
     crop_id: UUID
+    farm_id: UUID
     observation_date: date
     data_source: str
     visualization: CropHealthMapVisualization
