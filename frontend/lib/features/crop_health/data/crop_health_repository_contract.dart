@@ -1,0 +1,11 @@
+import 'models/crop_health.dart';
+import 'models/crop_health_history_item.dart';
+import 'models/crop_health_trend.dart';
+
+abstract interface class CropHealthRepositoryContract {
+  Future<CropHealth> getCropHealth(String cropId);
+
+  Future<List<CropHealthHistoryItem>> getCropHealthHistory(String cropId);
+
+  Future<CropHealthTrend> getCropHealthTrend(String cropId);
+}
