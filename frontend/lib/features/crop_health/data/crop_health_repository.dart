@@ -2,6 +2,7 @@ import 'crop_health_api.dart';
 import 'crop_health_repository_contract.dart';
 import 'models/crop_health.dart';
 import 'models/crop_health_history_item.dart';
+import 'models/crop_health_map.dart';
 import 'models/crop_health_trend.dart';
 
 class CropHealthRepository implements CropHealthRepositoryContract {
@@ -22,5 +23,10 @@ class CropHealthRepository implements CropHealthRepositoryContract {
   @override
   Future<CropHealthTrend> getCropHealthTrend(String cropId) {
     return _api.getCropHealthTrend(cropId);
+  }
+
+  @override
+  Future<CropHealthMap> getCropHealthMap(String cropId) {
+    return _api.getCropHealthMap(cropId);
   }
 }

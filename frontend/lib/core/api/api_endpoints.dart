@@ -21,4 +21,6 @@ class ApiEndpoints {
       '$crops/$cropId/health/history';
 
   static String cropHealthTrend(String cropId) => '$crops/$cropId/health/trend';
+
+  static String cropHealthMap(String cropId) => '$crops/$cropId/health/map';
 }

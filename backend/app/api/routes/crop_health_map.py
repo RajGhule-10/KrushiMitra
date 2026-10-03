@@ -37,6 +37,7 @@ def get_crop_health_map(
 
     return CropHealthMapResponse(
         crop_id=result.crop_id,
+        farm_id=result.farm_id,
         observation_date=result.observation_date,
         data_source=result.data_source,
         visualization=CropHealthMapVisualization(

@@ -51,6 +51,7 @@ class FakeMapService:
 def map_result(crop_id):
     return CropHealthMapResult(
         crop_id=crop_id,
+        farm_id=uuid4(),
         observation_date=date(2026, 10, 1),
         data_source="sentinel-2",
         visualization=GeeNdviVisualization(
@@ -78,8 +79,10 @@ def test_authenticated_map_returns_contract(client, monkeypatch):
     )
 
     assert response.status_code == 200
+    farm_id = FakeMapService.result.farm_id
     assert response.json() == {
         "crop_id": str(crop_id),
+        "farm_id": str(farm_id),
         "observation_date": "2026-10-01",
         "data_source": "sentinel-2",
         "visualization": {
