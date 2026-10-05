@@ -223,7 +223,22 @@ void main() {
     await tester.pumpWidget(buildScreen(repository));
     await tester.pumpAndSettle();
 
+    // The history section is below the current-health and trend sections.
+    // Scroll until its first row has been built.
+    await tester.scrollUntilVisible(
+      find.text('NDVI 0.70'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
     expect(find.text('NDVI 0.70'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('NDVI 0.40'),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+
     expect(find.text('NDVI 0.40'), findsOneWidget);
     expect(find.textContaining('Needs attention'), findsOneWidget);
   });

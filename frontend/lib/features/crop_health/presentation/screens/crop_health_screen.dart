@@ -162,6 +162,13 @@ class _CropHealthContentView extends StatelessWidget {
             icon: const Icon(Icons.satellite_alt_outlined),
             label: const Text('View Satellite Map'),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          FilledButton.icon(
+            onPressed: () =>
+                context.push('/crops/${cropHealth!.cropId}/advisory'),
+            icon: const Icon(Icons.task_alt_outlined),
+            label: const Text('View Crop Advisory'),
+          ),
         ],
         const SizedBox(height: AppSpacing.xl),
         Text('Health Trend', style: theme.textTheme.titleLarge),

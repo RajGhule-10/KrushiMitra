@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/advisory/presentation/screens/crop_advisory_screen.dart';
 import '../../features/authentication/presentation/screens/auth_gate.dart';
 import '../../features/crop_health/presentation/screens/crop_health_screen.dart';
 import '../../features/crop_health/presentation/screens/crop_health_map_screen.dart';
@@ -67,6 +68,12 @@ final GoRouter appRouter = GoRouter(
       name: 'cropHealthMap',
       builder: (context, state) =>
           CropHealthMapScreen(cropId: state.pathParameters['cropId']!),
+    ),
+    GoRoute(
+      path: '/crops/:cropId/advisory',
+      name: 'cropAdvisory',
+      builder: (context, state) =>
+          CropAdvisoryScreen(cropId: state.pathParameters['cropId']!),
     ),
   ],
 );
