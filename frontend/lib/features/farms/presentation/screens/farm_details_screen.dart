@@ -6,16 +6,32 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/farm.dart';
+import '../../../crops/data/models/crop.dart';
+import '../../../crops/presentation/state/crop_controller.dart';
+import '../../../crops/presentation/state/crop_state.dart';
 import '../state/farm_controller.dart';
 import '../state/farm_state.dart';
 
-class FarmDetailsScreen extends ConsumerWidget {
+class FarmDetailsScreen extends ConsumerStatefulWidget {
   const FarmDetailsScreen({required this.farmId, super.key});
 
   final String farmId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FarmDetailsScreen> createState() => _FarmDetailsScreenState();
+}
+
+class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(cropControllerProvider.notifier).loadCrops(widget.farmId),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final farm = _farmFromState(ref.watch(farmControllerProvider));
 
     if (farm == null) {
@@ -42,6 +58,11 @@ class FarmDetailsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             _FarmInformationCard(farm: farm),
             const SizedBox(height: AppSpacing.lg),
+            _CropSection(
+              farmId: farm.id,
+              state: ref.watch(cropControllerProvider),
+            ),
+            const SizedBox(height: AppSpacing.lg),
             _BoundaryCard(farmId: farm.id),
           ],
         ),
@@ -58,12 +79,82 @@ class FarmDetailsScreen extends ConsumerWidget {
     };
 
     for (final farm in farms) {
-      if (farm.id == farmId) {
+      if (farm.id == widget.farmId) {
         return farm;
       }
     }
 
     return null;
+  }
+}
+
+class _CropSection extends StatelessWidget {
+  const _CropSection({required this.farmId, required this.state});
+
+  final String farmId;
+  final CropState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final crops = switch (state) {
+      CropLoaded(:final crops) => crops,
+      CropCreating(:final crops) => crops,
+      CropError(:final crops) => crops,
+      CropInitial() || CropLoading() => const <Crop>[],
+    };
+
+    return _DetailsSection(
+      title: 'Your Crops',
+      icon: Icons.grass_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (state is CropLoading || state is CropInitial)
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            )
+          else if (crops.isEmpty) ...[
+            const Text('No crops added yet'),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: () => context.push('/farms/$farmId/crops/create'),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Crop'),
+            ),
+          ] else ...[
+            ...crops.map(_CropPreviewCard.new),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton(
+              onPressed: () => context.push('/farms/$farmId/crops'),
+              child: const Text('View all crops'),
+            ),
+          ],
+          if (state is CropError)
+            TextButton(
+              onPressed: () => context.push('/farms/$farmId/crops'),
+              child: const Text('Try again'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CropPreviewCard extends StatelessWidget {
+  const _CropPreviewCard(this.crop);
+
+  final Crop crop;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.grass, color: AppColors.primaryGreen),
+      title: Text(crop.cropName),
+      subtitle: Text('${crop.season} · ${crop.status}'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push('/crops/${crop.id}/health'),
+    );
   }
 }
 
