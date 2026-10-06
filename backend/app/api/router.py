@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.routes import (
     advisory,
     auth,
+    crop,
     crop_health,
     crop_health_analysis,
     crop_health_history,
@@ -44,6 +45,11 @@ api_router.include_router(
     farm_boundary.router,
     prefix="/farms",
     tags=["Farm Boundaries"],
+)
+
+api_router.include_router(
+    crop.router,
+    tags=["Crops"],
 )
 
 api_router.include_router(
