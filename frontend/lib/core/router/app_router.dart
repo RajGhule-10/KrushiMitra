@@ -4,6 +4,8 @@ import '../../features/advisory/presentation/screens/crop_advisory_screen.dart';
 import '../../features/authentication/presentation/screens/auth_gate.dart';
 import '../../features/crop_health/presentation/screens/crop_health_screen.dart';
 import '../../features/crop_health/presentation/screens/crop_health_map_screen.dart';
+import '../../features/crops/presentation/screens/crops_screen.dart';
+import '../../features/crops/presentation/screens/create_crop_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/farmer_profile/presentation/screens/farmer_profile_screen.dart';
 import '../../features/farms/presentation/screens/farm_map_screen.dart';
@@ -39,6 +41,18 @@ final GoRouter appRouter = GoRouter(
       path: '/farms/create',
       name: 'createFarm',
       builder: (context, state) => const CreateFarmScreen(),
+    ),
+    GoRoute(
+      path: '/farms/:farmId/crops',
+      name: 'crops',
+      builder: (context, state) =>
+          CropsScreen(farmId: state.pathParameters['farmId']!),
+    ),
+    GoRoute(
+      path: '/farms/:farmId/crops/create',
+      name: 'createCrop',
+      builder: (context, state) =>
+          CreateCropScreen(farmId: state.pathParameters['farmId']!),
     ),
     GoRoute(
       path: '/farms/:farmId',

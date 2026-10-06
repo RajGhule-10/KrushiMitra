@@ -36,6 +36,11 @@ class _FarmsScreenState extends ConsumerState<FarmsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          tooltip: 'Home',
+          onPressed: () => context.go('/dashboard'),
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: const Text('Your Farms'),
       ),
       body: switch (state) {

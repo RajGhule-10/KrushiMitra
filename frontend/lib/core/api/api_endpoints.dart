@@ -15,6 +15,10 @@ class ApiEndpoints {
 
   static const String crops = '/api/v1/crops';
 
+  static String farmCrops(String farmId) => '$farms/$farmId/crops';
+
+  static String crop(String cropId) => '$crops/$cropId';
+
   static String cropHealth(String cropId) => '$crops/$cropId/health';
 
   static String cropHealthHistory(String cropId) =>

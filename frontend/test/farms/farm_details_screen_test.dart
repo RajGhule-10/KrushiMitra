@@ -11,6 +11,11 @@ import 'package:frontend/features/farms/presentation/screens/farm_boundary_scree
 import 'package:frontend/features/farms/presentation/state/farm_controller.dart';
 import 'package:frontend/features/farms/presentation/state/farm_state.dart';
 import 'package:frontend/features/farms/presentation/widgets/farm_card.dart';
+import 'package:frontend/features/crops/data/crop_providers.dart';
+import 'package:frontend/features/crops/data/crop_repository_contract.dart';
+import 'package:frontend/features/crops/data/models/crop.dart';
+import 'package:frontend/features/crops/data/models/crop_create_request.dart';
+import 'package:frontend/features/crops/data/models/crop_update_request.dart';
 import 'package:go_router/go_router.dart';
 
 class _EmptyBoundaryRepository implements FarmBoundaryRepositoryContract {
@@ -32,6 +37,22 @@ class _EmptyBoundaryRepository implements FarmBoundaryRepositoryContract {
       ),
     );
   }
+}
+
+class _EmptyCropRepository implements CropRepositoryContract {
+  @override
+  Future<List<Crop>> getCrops(String farmId) async => [];
+
+  @override
+  Future<Crop> getCrop(String cropId) => throw UnimplementedError();
+
+  @override
+  Future<Crop> createCrop(String farmId, CropCreateRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Crop> updateCrop(String cropId, CropUpdateRequest request) =>
+      throw UnimplementedError();
 }
 
 Farm createFarm({
@@ -60,6 +81,7 @@ Widget buildDetails(FarmState state, {String farmId = 'farm-1'}) {
   return ProviderScope(
     overrides: [
       farmControllerProvider.overrideWith(() => _FakeFarmController(state)),
+      cropRepositoryProvider.overrideWithValue(_EmptyCropRepository()),
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -148,6 +170,7 @@ void main() {
           farmBoundaryRepositoryProvider.overrideWithValue(
             _EmptyBoundaryRepository(),
           ),
+          cropRepositoryProvider.overrideWithValue(_EmptyCropRepository()),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
@@ -198,6 +221,7 @@ void main() {
           farmControllerProvider.overrideWith(
             () => _FakeFarmController(FarmLoaded([createFarm()])),
           ),
+          cropRepositoryProvider.overrideWithValue(_EmptyCropRepository()),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
