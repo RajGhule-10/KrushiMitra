@@ -64,57 +64,136 @@ class _CropHealthScreenState extends ConsumerState<CropHealthScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(cropHealthControllerProvider);
 
-    final title = state is CropHealthLoaded && state.cropHealth != null
+    final cropName = state is CropHealthLoaded && state.cropHealth != null
         ? state.cropHealth!.cropName
-        : 'Crop Health';
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        surfaceTintColor: Colors.transparent,
-        title: Text(title),
-      ),
-      body: switch (state) {
-        CropHealthInitial() ||
-        CropHealthLoading() => const _CropHealthLoadingView(),
-        CropHealthAnalyzing(:final cropHealth, :final history, :final trend) =>
-          _CropHealthContentView(
-            cropHealth: cropHealth,
-            history: history,
-            trend: trend,
-            analyzing: true,
-            onAnalyze: () => ref
-                .read(cropHealthControllerProvider.notifier)
-                .analyzeCropHealth(widget.cropId),
-          ),
-        CropHealthLoaded(:final cropHealth, :final history, :final trend) =>
-          _CropHealthContentView(
-            cropHealth: cropHealth,
-            history: history,
-            trend: trend,
-            onAnalyze: () => ref
-                .read(cropHealthControllerProvider.notifier)
-                .analyzeCropHealth(widget.cropId),
-          ),
-        CropHealthAnalysisError(
-          :final cropHealth,
-          :final history,
-          :final trend,
-        ) =>
-          _CropHealthContentView(
-            cropHealth: cropHealth,
-            history: history,
-            trend: trend,
-            onAnalyze: () => ref
-                .read(cropHealthControllerProvider.notifier)
-                .analyzeCropHealth(widget.cropId),
-          ),
-        CropHealthError(:final message) => _CropHealthErrorView(
-          message: message,
-          onRetry: _loadAll,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
+              child: _CropHealthHeader(cropName: cropName),
+            ),
+            Expanded(
+              child: switch (state) {
+                CropHealthInitial() ||
+                CropHealthLoading() => const _CropHealthLoadingView(),
+                CropHealthAnalyzing(
+                  :final cropHealth,
+                  :final history,
+                  :final trend,
+                ) =>
+                  _CropHealthContentView(
+                    cropHealth: cropHealth,
+                    history: history,
+                    trend: trend,
+                    analyzing: true,
+                    onAnalyze: () => ref
+                        .read(cropHealthControllerProvider.notifier)
+                        .analyzeCropHealth(widget.cropId),
+                  ),
+                CropHealthLoaded(
+                  :final cropHealth,
+                  :final history,
+                  :final trend,
+                ) =>
+                  _CropHealthContentView(
+                    cropHealth: cropHealth,
+                    history: history,
+                    trend: trend,
+                    onAnalyze: () => ref
+                        .read(cropHealthControllerProvider.notifier)
+                        .analyzeCropHealth(widget.cropId),
+                  ),
+                CropHealthAnalysisError(
+                  :final cropHealth,
+                  :final history,
+                  :final trend,
+                ) =>
+                  _CropHealthContentView(
+                    cropHealth: cropHealth,
+                    history: history,
+                    trend: trend,
+                    onAnalyze: () => ref
+                        .read(cropHealthControllerProvider.notifier)
+                        .analyzeCropHealth(widget.cropId),
+                  ),
+                CropHealthError(:final message) => _CropHealthErrorView(
+                  message: message,
+                  onRetry: _loadAll,
+                ),
+              },
+            ),
+          ],
         ),
-      },
+      ),
+    );
+  }
+}
+
+/// Custom header replacing the default AppBar, matching the
+/// icon-box + title/subtitle layout established by DashboardHeader.
+/// Always rendered regardless of load state so back navigation is
+/// never lost during a full-screen loading or error view.
+class _CropHealthHeader extends StatelessWidget {
+  const _CropHealthHeader({required this.cropName});
+
+  final String? cropName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => Navigator.of(context).maybePop(),
+          borderRadius: AppRadius.smRadius,
+          child: Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: AppRadius.smRadius,
+              border: Border.all(
+                color: AppColors.charcoal.withValues(alpha: 0.08),
+              ),
+            ),
+            child: const Icon(
+              Icons.arrow_back,
+              size: 20,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                cropName ?? 'Crop Health',
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Satellite-based health insights for this crop.',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -143,27 +222,37 @@ class _CropHealthErrorView extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.cloud_off_outlined,
-              color: AppColors.attentionCoral,
-              size: 40,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.mdRadius,
+            border: Border.all(
+              color: AppColors.charcoal.withValues(alpha: 0.06),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              message,
-              style: theme.textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
-            ),
-          ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_outlined,
+                color: AppColors.attentionCoral,
+                size: 40,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                message,
+                style: theme.textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try again'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -192,7 +281,7 @@ class _CropHealthContentView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.md,
+        AppSpacing.sm,
         AppSpacing.lg,
         AppSpacing.xxl,
       ),
@@ -200,42 +289,53 @@ class _CropHealthContentView extends StatelessWidget {
         Text('Current Health', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
         _CurrentHealthCard(cropHealth: cropHealth, history: history),
-        const SizedBox(height: AppSpacing.md),
-        FilledButton.icon(
-          onPressed: analyzing ? null : onAnalyze,
-          icon: analyzing
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.satellite_alt_outlined),
-          label: Text(
-            analyzing
-                ? 'Analyzing the latest satellite data...'
-                : 'Analyze Latest Satellite Data',
-          ),
-        ),
-        if (cropHealth != null) ...[
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
-            onPressed: () =>
-                context.push('/crops/${cropHealth!.cropId}/health/map'),
-            icon: const Icon(Icons.satellite_alt_outlined),
-            label: const Text('View Satellite Map'),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          FilledButton.icon(
-            onPressed: () =>
-                context.push('/crops/${cropHealth!.cropId}/advisory'),
-            icon: const Icon(Icons.task_alt_outlined),
-            label: const Text('View Crop Advisory'),
-          ),
-        ],
         const SizedBox(height: AppSpacing.xl),
         Text('Health Trend', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
         _HealthTrendCard(trend: trend),
+        const SizedBox(height: AppSpacing.xl),
+        Text('Next Steps', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: analyzing ? null : onAnalyze,
+            icon: analyzing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.satellite_alt_outlined),
+            label: Text(
+              analyzing
+                  ? 'Analyzing the latest satellite data...'
+                  : 'Analyze Latest Satellite Data',
+            ),
+          ),
+        ),
+        if (cropHealth != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () =>
+                  context.push('/crops/${cropHealth!.cropId}/health/map'),
+              icon: const Icon(Icons.satellite_alt_outlined),
+              label: const Text('View Satellite Map'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () =>
+                  context.push('/crops/${cropHealth!.cropId}/advisory'),
+              icon: const Icon(Icons.task_alt_outlined),
+              label: const Text('View Crop Advisory'),
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         Text('Recent Observations', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
@@ -245,8 +345,9 @@ class _CropHealthContentView extends StatelessWidget {
   }
 }
 
-/// Shared card shell, matching the warm-surface/rounded-corner
-/// convention used by FarmerProfileScreen's `_ProfileSection`.
+/// Shared light-surface card shell, matching the warm-surface/
+/// rounded-corner convention used by FarmerProfileScreen's
+/// `_ProfileSection` and the Dashboard's `FarmSummaryCard`.
 class _SectionCard extends StatelessWidget {
   const _SectionCard({required this.child});
 
@@ -306,15 +407,24 @@ class _CurrentHealthCard extends StatelessWidget {
       return _SectionCard(
         child: Column(
           children: [
-            const Icon(
-              Icons.satellite_alt_outlined,
-              color: AppColors.textSecondary,
-              size: 32,
+            Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.10),
+                borderRadius: AppRadius.lgRadius,
+              ),
+              child: const Icon(
+                Icons.satellite_alt_outlined,
+                color: AppColors.primaryGreen,
+                size: 30,
+              ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'No recent crop health data yet.',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -335,11 +445,17 @@ class _CurrentHealthCard extends StatelessWidget {
       observation.observationDate,
     );
     final label = healthStatus ?? 'Status unavailable';
-    final color = healthStatus == null
-        ? AppColors.textSecondary
+    final statusColor = healthStatus == null
+        ? AppColors.textOnDarkSecondary
         : _colorForHealthStatus(healthStatus);
 
-    return _SectionCard(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.charcoal,
+        borderRadius: AppRadius.lgRadius,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -348,35 +464,56 @@ class _CurrentHealthCard extends StatelessWidget {
               Container(
                 width: 10,
                 height: 10,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 label,
-                style: theme.textTheme.titleMedium?.copyWith(color: color),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: statusColor,
+                ),
               ),
               const Spacer(),
               Text(
                 'NDVI ${observation.ndviMean.toStringAsFixed(2)}',
-                style: theme.textTheme.labelLarge,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.textOnDark,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          _InfoRow(
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            observation.ndviMean.toStringAsFixed(2),
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: AppColors.textOnDark,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Vegetation index (NDVI)',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.textOnDarkSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _DarkInfoRow(
             icon: Icons.event_outlined,
             label: 'Observed on',
             value: _formatDate(observation.observationDate),
           ),
           const SizedBox(height: AppSpacing.xs),
-          _InfoRow(
+          _DarkInfoRow(
             icon: Icons.satellite_alt_outlined,
             label: 'Source',
             value: _friendlyDataSource(observation.dataSource),
           ),
           if (observation.cloudPercentage != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            _InfoRow(
+            _DarkInfoRow(
               icon: Icons.cloud_outlined,
               label: 'Cloud cover',
               value: '${observation.cloudPercentage!.toStringAsFixed(0)}%',
@@ -405,7 +542,14 @@ class _HealthTrendCard extends StatelessWidget {
     final directionIcon = _iconForTrendDirection(trend.direction);
     final directionColor = _colorForTrendDirection(trend.direction);
 
-    return _SectionCard(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: directionColor.withValues(alpha: 0.08),
+        borderRadius: AppRadius.mdRadius,
+        border: Border.all(color: directionColor.withValues(alpha: 0.25)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -559,6 +703,46 @@ class _InfoRow extends StatelessWidget {
         Text(
           value,
           style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Light-on-dark variant of [_InfoRow], used inside the dark current
+/// health hero card.
+class _DarkInfoRow extends StatelessWidget {
+  const _DarkInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textOnDarkSecondary),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textOnDarkSecondary,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: AppColors.textOnDark,
             fontWeight: FontWeight.w600,
           ),
         ),

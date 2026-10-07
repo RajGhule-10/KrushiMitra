@@ -105,9 +105,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('View Crop Advisory'), findsOneWidget);
+    final advisoryButton = find.text('View Crop Advisory');
 
-    await tester.tap(find.text('View Crop Advisory'));
+    await tester.scrollUntilVisible(
+      advisoryButton,
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+
+    expect(advisoryButton, findsOneWidget);
+
+    await tester.tap(advisoryButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Crop Advisory'), findsOneWidget);
