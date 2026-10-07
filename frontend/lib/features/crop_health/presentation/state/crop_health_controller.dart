@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/crop_health_providers.dart';
+import '../../data/models/crop_health_trend.dart';
 import 'crop_health_state.dart';
 
 final cropHealthControllerProvider =
@@ -9,6 +10,8 @@ final cropHealthControllerProvider =
     );
 
 class CropHealthController extends Notifier<CropHealthState> {
+  bool _isAnalyzing = false;
+
   @override
   CropHealthState build() {
     return const CropHealthInitial();
@@ -79,9 +82,52 @@ class CropHealthController extends Notifier<CropHealthState> {
         trend: trend,
       );
     } catch (error) {
-      state = const CropHealthError(
-        'Unable to load the crop health trend. Please try again.',
+      state = CropHealthLoaded(
+        cropHealth: existing.cropHealth,
+        history: existing.history,
+        trend: null,
       );
+    }
+  }
+
+  Future<void> analyzeCropHealth(String cropId) async {
+    if (_isAnalyzing) return;
+
+    final existing = _existing;
+    _isAnalyzing = true;
+    state = CropHealthAnalyzing(
+      cropHealth: existing.cropHealth,
+      history: existing.history,
+      trend: existing.trend,
+    );
+
+    try {
+      await ref.read(cropHealthRepositoryProvider).analyzeCropHealth(cropId);
+      final repository = ref.read(cropHealthRepositoryProvider);
+      final cropHealth = await repository.getCropHealth(cropId);
+      final history = await repository.getCropHealthHistory(cropId);
+
+      CropHealthTrend? trend;
+      try {
+        trend = await repository.getCropHealthTrend(cropId);
+      } catch (_) {
+        trend = null;
+      }
+
+      state = CropHealthLoaded(
+        cropHealth: cropHealth,
+        history: history,
+        trend: trend,
+      );
+    } catch (error) {
+      state = CropHealthAnalysisError(
+        message: 'Unable to analyze satellite data. Please try again.',
+        cropHealth: existing.cropHealth,
+        history: existing.history,
+        trend: existing.trend,
+      );
+    } finally {
+      _isAnalyzing = false;
     }
   }
 }

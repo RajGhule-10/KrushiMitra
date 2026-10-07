@@ -14,6 +14,14 @@ class CropHealthLoading extends CropHealthState {
   const CropHealthLoading();
 }
 
+class CropHealthAnalyzing extends CropHealthState {
+  const CropHealthAnalyzing({this.cropHealth, this.history, this.trend});
+
+  final CropHealth? cropHealth;
+  final List<CropHealthHistoryItem>? history;
+  final CropHealthTrend? trend;
+}
+
 /// Holds whichever of the three crop-health pieces have been loaded so
 /// far. Fields are independently nullable because the latest-health,
 /// history, and trend endpoints are loaded separately; loading one
@@ -30,4 +38,18 @@ class CropHealthError extends CropHealthState {
   const CropHealthError(this.message);
 
   final String message;
+}
+
+class CropHealthAnalysisError extends CropHealthState {
+  const CropHealthAnalysisError({
+    required this.message,
+    this.cropHealth,
+    this.history,
+    this.trend,
+  });
+
+  final String message;
+  final CropHealth? cropHealth;
+  final List<CropHealthHistoryItem>? history;
+  final CropHealthTrend? trend;
 }

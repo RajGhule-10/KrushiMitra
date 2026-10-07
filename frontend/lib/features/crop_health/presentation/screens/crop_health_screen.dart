@@ -31,6 +31,22 @@ class _CropHealthScreenState extends ConsumerState<CropHealthScreen> {
   void initState() {
     super.initState();
 
+    ref.listenManual<CropHealthState>(cropHealthControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (!mounted) return;
+      if (next is CropHealthAnalysisError) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.message)));
+      } else if (previous is CropHealthAnalyzing && next is CropHealthLoaded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Latest satellite analysis completed.')),
+        );
+      }
+    });
+
     Future.microtask(_loadAll);
   }
 
@@ -62,11 +78,37 @@ class _CropHealthScreenState extends ConsumerState<CropHealthScreen> {
       body: switch (state) {
         CropHealthInitial() ||
         CropHealthLoading() => const _CropHealthLoadingView(),
+        CropHealthAnalyzing(:final cropHealth, :final history, :final trend) =>
+          _CropHealthContentView(
+            cropHealth: cropHealth,
+            history: history,
+            trend: trend,
+            analyzing: true,
+            onAnalyze: () => ref
+                .read(cropHealthControllerProvider.notifier)
+                .analyzeCropHealth(widget.cropId),
+          ),
         CropHealthLoaded(:final cropHealth, :final history, :final trend) =>
           _CropHealthContentView(
             cropHealth: cropHealth,
             history: history,
             trend: trend,
+            onAnalyze: () => ref
+                .read(cropHealthControllerProvider.notifier)
+                .analyzeCropHealth(widget.cropId),
+          ),
+        CropHealthAnalysisError(
+          :final cropHealth,
+          :final history,
+          :final trend,
+        ) =>
+          _CropHealthContentView(
+            cropHealth: cropHealth,
+            history: history,
+            trend: trend,
+            onAnalyze: () => ref
+                .read(cropHealthControllerProvider.notifier)
+                .analyzeCropHealth(widget.cropId),
           ),
         CropHealthError(:final message) => _CropHealthErrorView(
           message: message,
@@ -133,11 +175,15 @@ class _CropHealthContentView extends StatelessWidget {
     required this.cropHealth,
     required this.history,
     required this.trend,
+    required this.onAnalyze,
+    this.analyzing = false,
   });
 
   final CropHealth? cropHealth;
   final List<CropHealthHistoryItem>? history;
   final CropHealthTrend? trend;
+  final VoidCallback onAnalyze;
+  final bool analyzing;
 
   @override
   Widget build(BuildContext context) {
@@ -154,6 +200,22 @@ class _CropHealthContentView extends StatelessWidget {
         Text('Current Health', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
         _CurrentHealthCard(cropHealth: cropHealth, history: history),
+        const SizedBox(height: AppSpacing.md),
+        FilledButton.icon(
+          onPressed: analyzing ? null : onAnalyze,
+          icon: analyzing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.satellite_alt_outlined),
+          label: Text(
+            analyzing
+                ? 'Analyzing the latest satellite data...'
+                : 'Analyze Latest Satellite Data',
+          ),
+        ),
         if (cropHealth != null) ...[
           const SizedBox(height: AppSpacing.lg),
           FilledButton.icon(
@@ -257,8 +319,8 @@ class _CurrentHealthCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'This will update automatically after the next '
-              'satellite pass.',
+              'Run an analysis to check the latest available '
+              'satellite data.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
