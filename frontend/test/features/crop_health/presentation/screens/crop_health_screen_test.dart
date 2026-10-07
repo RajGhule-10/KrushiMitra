@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/crop_health/data/crop_health_providers.dart';
 import 'package:frontend/features/crop_health/data/crop_health_repository_contract.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health.dart';
+import 'package:frontend/features/crop_health/data/models/crop_health_analysis.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_history_item.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_map.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_trend.dart';
@@ -24,6 +25,11 @@ class _FakeCropHealthRepository implements CropHealthRepositoryContract {
   final CropHealthTrend? trendResult;
   final bool shouldThrow;
   final Duration? delay;
+
+  @override
+  Future<CropHealthAnalysis> analyzeCropHealth(String cropId) {
+    throw UnimplementedError();
+  }
 
   @override
   Future<CropHealthMap> getCropHealthMap(String cropId) {

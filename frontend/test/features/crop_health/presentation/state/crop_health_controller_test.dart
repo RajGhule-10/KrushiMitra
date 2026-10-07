@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/crop_health/data/crop_health_providers.dart';
 import 'package:frontend/features/crop_health/data/crop_health_repository_contract.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health.dart';
+import 'package:frontend/features/crop_health/data/models/crop_health_analysis.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_history_item.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_map.dart';
 import 'package:frontend/features/crop_health/data/models/crop_health_trend.dart';
@@ -16,12 +17,27 @@ class _FakeCropHealthRepository implements CropHealthRepositoryContract {
     this.historyResult,
     this.trendResult,
     this.shouldThrow = false,
+    this.analysisResult,
+    this.analysisDelay,
+    this.analysisShouldThrow = false,
   });
 
   final CropHealth? cropHealthResult;
   final List<CropHealthHistoryItem>? historyResult;
   final CropHealthTrend? trendResult;
   final bool shouldThrow;
+  final CropHealthAnalysis? analysisResult;
+  final Duration? analysisDelay;
+  final bool analysisShouldThrow;
+  int analysisCalls = 0;
+
+  @override
+  Future<CropHealthAnalysis> analyzeCropHealth(String cropId) async {
+    analysisCalls++;
+    if (analysisDelay != null) await Future<void>.delayed(analysisDelay!);
+    if (analysisShouldThrow) throw Exception('analysis failed');
+    return analysisResult!;
+  }
 
   @override
   Future<CropHealthMap> getCropHealthMap(String cropId) {
@@ -155,5 +171,65 @@ void main() {
     final state = container.read(cropHealthControllerProvider);
     expect(state, isA<CropHealthLoaded>());
     expect((state as CropHealthLoaded).trend, trend);
+  });
+
+  test('analysis prevents duplicate submissions and refreshes data', () async {
+    final analysis = CropHealthAnalysis(
+      cropId: 'crop-1',
+      observationDate: DateTime(2026, 10, 5),
+      dataSource: 'sentinel-2',
+      cloudPercentage: 0.77,
+      metric: 'ndvi_mean',
+      ndviValue: 0.7,
+      healthStatus: 'Great',
+    );
+    final repository = _FakeCropHealthRepository(
+      cropHealthResult: cropHealth,
+      historyResult: [historyItem],
+      trendResult: trend,
+      analysisResult: analysis,
+      analysisDelay: const Duration(milliseconds: 20),
+    );
+    final container = ProviderContainer(
+      overrides: [cropHealthRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(cropHealthControllerProvider.notifier);
+    await notifier.loadCropHealth('crop-1');
+    await Future.wait([
+      notifier.analyzeCropHealth('crop-1'),
+      notifier.analyzeCropHealth('crop-1'),
+    ]);
+
+    expect(repository.analysisCalls, 1);
+    expect(
+      container.read(cropHealthControllerProvider),
+      isA<CropHealthLoaded>(),
+    );
+  });
+
+  test('analysis failure preserves loaded data', () async {
+    final repository = _FakeCropHealthRepository(
+      cropHealthResult: cropHealth,
+      analysisResult: null,
+      analysisShouldThrow: true,
+    );
+    final container = ProviderContainer(
+      overrides: [cropHealthRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(cropHealthControllerProvider.notifier);
+    await notifier.loadCropHealth('crop-1');
+    await notifier.analyzeCropHealth('crop-1');
+
+    final state =
+        container.read(cropHealthControllerProvider) as CropHealthAnalysisError;
+    expect(state.cropHealth, cropHealth);
+    expect(
+      state.message,
+      'Unable to analyze satellite data. Please try again.',
+    );
   });
 }
