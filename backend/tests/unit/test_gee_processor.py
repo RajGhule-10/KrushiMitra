@@ -90,12 +90,27 @@ def test_polygon_is_converted_and_image_is_clipped():
     result = GeeImageProcessor(ee).process_image(_satellite_image(), POLYGON)
 
     ee.Geometry.Polygon.assert_called_once_with(POLYGON["coordinates"])
-    ee.Image.assert_called_once_with("S2A/test-image")
+    ee.Image.assert_called_once_with(
+        "COPERNICUS/S2_SR_HARMONIZED/S2A/test-image"
+    )
     ee.image.clip.assert_called_once_with(("Polygon", POLYGON["coordinates"]))
     assert isinstance(result, GeeProcessedImage)
     assert result.image_id == "S2A/test-image"
     assert result.image == "clipped-image"
     assert result.aoi == ("Polygon", POLYGON["coordinates"])
+
+
+def test_processor_qualifies_sentinel_system_index_as_asset_id():
+    ee = FakeEarthEngine()
+    image = _satellite_image()
+    image.image_id = "20261005T052659_20261005T053448_T43QCA"
+
+    GeeImageProcessor(ee).process_image(image, POLYGON)
+
+    ee.Image.assert_called_once_with(
+        "COPERNICUS/S2_SR_HARMONIZED/"
+        "20261005T052659_20261005T053448_T43QCA"
+    )
 
 
 def test_multipolygon_is_converted():

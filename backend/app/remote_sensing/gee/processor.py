@@ -35,7 +35,9 @@ class GeeImageProcessor:
 
         try:
             aoi = _to_ee_geometry(ee, geometry)
-            processed_image = ee.Image(image.image_id).clip(aoi)
+            processed_image = ee.Image(
+                f"{image.collection}/{image.image_id}"
+            ).clip(aoi)
         except RemoteSensingProviderError:
             raise
         except Exception as error:
